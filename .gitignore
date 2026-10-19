@@ -1,0 +1,11 @@
+.env
+apps.local.json
+node_modules/
+*.log
+
+.DS_Store
+coverage/
+.env.*
+!.env.example
+*.pem
+*.key

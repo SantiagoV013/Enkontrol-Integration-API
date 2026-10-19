@@ -1,0 +1,1932 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Construkom · Integración Enkontrol",
+    "version": "0.1.0",
+    "description": "API server-to-server. Módulo CRM implementado; mapeo/procedimiento ERP y despliegue pendientes. 120 solicitudes por minuto por IP, incluyendo salud. No hay endpoint SQL genérico ni Swagger UI integrado. Los esquemas de datos de origen documentan tipos esperados, no una validación exhaustiva en runtime."
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:4080",
+      "description": "Local; sustituir por HTTPS del proxy para acceso remoto"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "CRM"
+    },
+    {
+      "name": "Salud"
+    }
+  ],
+  "paths": {
+    "/health/live": {
+      "get": {
+        "operationId": "liveness",
+        "summary": "Vida del proceso, sin comprobación de dependencias",
+        "security": [],
+        "tags": [
+          "Salud"
+        ],
+        "responses": {
+          "200": {
+            "description": "Proceso activo",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de petición",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "const": "up"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Cuota excedida",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de petición",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/apps/{appId}/status": {
+      "parameters": [
+        {
+          "name": "appId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,39}$"
+          },
+          "description": "Aplicación registrada; la clave Bearer debe corresponder a esta aplicación."
+        }
+      ],
+      "get": {
+        "operationId": "appStatus",
+        "summary": "Disponibilidad Mongo y último sondeo",
+        "description": "mongoReady comprueba todas las fuentes y el hub, no el ERP. lastPoll es volátil y puede ser null.",
+        "tags": [
+          "CRM"
+        ],
+        "x-required-scope": "read",
+        "responses": {
+          "200": {
+            "description": "Respuesta 200",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de petición",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppStatus"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error; consultar catálogo de códigos en api.md",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de petición",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error; consultar catálogo de códigos en api.md",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de petición",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Error; consultar catálogo de códigos en api.md",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de petición",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Mongo no disponible o dependencia fallida",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de petición",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/AppStatus"
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/apps/{appId}/erp/identity": {
+      "parameters": [
+        {
+          "name": "appId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,39}$"
+          },
+          "description": "Aplicación registrada; la clave Bearer debe corresponder a esta aplicación."
+        }
+      ],
+      "get": {
+        "operationId": "erpIdentity",
+        "summary": "Consultar y comprobar identidad de Enkontrol",
+        "description": "Requiere ODBC. La ruta de archivo devuelta es información de infraestructura. No hace escrituras.",
+        "tags": [
+          "CRM"
+        ],
+        "x-required-scope": "erp:inspect",
+        "responses": {
+          "200": {
+            "description": "Respuesta 200",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de petición",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Identity"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error; consultar catálogo de códigos en api.md",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de petición",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error; consultar catálogo de códigos en api.md",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de petición",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Error; consultar catálogo de códigos en api.md",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de petición",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Error; consultar catálogo de códigos en api.md",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de petición",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/apps/{appId}/leads": {
+      "parameters": [
+        {
+          "name": "appId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,39}$"
+          },
+          "description": "Aplicación registrada; la clave Bearer debe corresponder a esta aplicación."
+        }
+      ],
+      "get": {
+        "operationId": "listLeads",
+        "summary": "Listar leads elegibles",
+        "description": "Orden ascendente por _id. Solo etapas configuradas. Una página llena puede devolver cursor aunque la siguiente sea vacía.",
+        "tags": [
+          "CRM"
+        ],
+        "x-required-scope": "read",
+        "responses": {
+          "200": {
+            "description": "Respuesta 200",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de petición",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeadPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error; consultar catálogo de códigos en api.md",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de petición",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error; consultar catálogo de códigos en api.md",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de petición",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error; consultar catálogo de códigos en api.md",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de petición",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Error; consultar catálogo de códigos en api.md",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de petición",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Error; consultar catálogo de códigos en api.md",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de petición",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            }
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{24}$"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/apps/{appId}/leads/{id}/preview": {
+      "parameters": [
+        {
+          "name": "appId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,39}$"
+          },
+          "description": "Aplicación registrada; la clave Bearer debe corresponder a esta aplicación."
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^[a-fA-F0-9]{24}$"
+          },
+          "description": "ObjectId de lead; un ID mal formado en la ruta devuelve 404."
+        }
+      ],
+      "get": {
+        "operationId": "previewLead",
+        "summary": "Leer instantánea sin crear trabajo",
+        "description": "Máximo 1 MiB serializado, 1000 actividades y 1000 visitas. No confirma mapeo ERP.",
+        "tags": [
+          "CRM"
+        ],
+        "x-required-scope": "read",
+        "responses": {
+          "200": {
+            "description": "Respuesta 200",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de petición",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Preview"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error; consultar catálogo de códigos en api.md",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de petición",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error; consultar catálogo de códigos en api.md",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de petición",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error; consultar catálogo de códigos en api.md",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de petición",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error; consultar catálogo de códigos en api.md",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de petición",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error; consultar catálogo de códigos en api.md",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de petición",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Error; consultar catálogo de códigos en api.md",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de petición",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Error; consultar catálogo de códigos en api.md",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de petición",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/apps/{appId}/leads/{id}/sync": {
+      "parameters": [
+        {
+          "name": "appId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,39}$"
+          },
+          "description": "Aplicación registrada; la clave Bearer debe corresponder a esta aplicación."
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^[a-fA-F0-9]{24}$"
+          },
+          "description": "ObjectId de lead; un ID mal formado en la ruta devuelve 404."
+        }
+      ],
+      "post": {
+        "operationId": "captureLead",
+        "summary": "Capturar desde Mongo y solicitar sincronización",
+        "description": "Sin cuerpo: no enviar JSON ni Transfer-Encoding. 202 no significa entrega; consultar status. El modo preview no escribe al ERP.",
+        "tags": [
+          "CRM"
+        ],
+        "x-required-scope": "enqueue",
+        "responses": {
+          "202": {
+            "description": "Respuesta 202",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de petición",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Accepted"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error; consultar catálogo de códigos en api.md",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de petición",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error; consultar catálogo de códigos en api.md",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de petición",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error; consultar catálogo de códigos en api.md",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de petición",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error; consultar catálogo de códigos en api.md",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de petición",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error; consultar catálogo de códigos en api.md",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de petición",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error; consultar catálogo de códigos en api.md",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de petición",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Error; consultar catálogo de códigos en api.md",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de petición",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Error; consultar catálogo de códigos en api.md",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de petición",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/apps/{appId}/leads/{id}/status": {
+      "parameters": [
+        {
+          "name": "appId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,39}$"
+          },
+          "description": "Aplicación registrada; la clave Bearer debe corresponder a esta aplicación."
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "pattern": "^[a-fA-F0-9]{24}$"
+          },
+          "description": "ObjectId de lead; un ID mal formado en la ruta devuelve 404."
+        }
+      ],
+      "get": {
+        "operationId": "leadSyncStatus",
+        "summary": "Consultar trabajo sin payload ni leaseToken",
+        "description": "El estado es calculado. synced confirma solo desiredHash. No hay historial de intentos.",
+        "tags": [
+          "CRM"
+        ],
+        "x-required-scope": "read",
+        "responses": {
+          "200": {
+            "description": "Respuesta 200",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de petición",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error; consultar catálogo de códigos en api.md",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de petición",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error; consultar catálogo de códigos en api.md",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de petición",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error; consultar catálogo de códigos en api.md",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de petición",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Error; consultar catálogo de códigos en api.md",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de petición",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Error; consultar catálogo de códigos en api.md",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Identificador de petición",
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string",
+                  "const": "nosniff"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Clave aleatoria por aplicación; no es JWT. Permisos definidos en apps.local.json."
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "requestId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "error",
+          "requestId"
+        ]
+      },
+      "Lead": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string",
+            "pattern": "^[a-fA-F0-9]{24}$"
+          },
+          "nombreCompleto": {
+            "type": "string"
+          },
+          "telefono": {
+            "type": "string"
+          },
+          "correo": {
+            "type": "string"
+          },
+          "fuente": {
+            "type": "string"
+          },
+          "campaña": {
+            "type": "string"
+          },
+          "proyectoInteres": {
+            "type": "string"
+          },
+          "tipoPropiedad": {
+            "type": "string"
+          },
+          "rangoPresupuesto": {
+            "type": "string"
+          },
+          "estado": {
+            "type": "string"
+          },
+          "asesorAsignadoId": {
+            "type": "string"
+          },
+          "notas": {
+            "type": "string"
+          },
+          "etiquetasInternas": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "fechaProximaAccion": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "Campos esperados del CRM, presentes según el documento fuente. La implementación proyecta pero no valida todos los tipos de negocio."
+      },
+      "Activity": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string",
+            "pattern": "^[a-fA-F0-9]{24}$"
+          },
+          "tipo": {
+            "type": "string"
+          },
+          "leadId": {
+            "type": "string"
+          },
+          "usuarioId": {
+            "type": "string"
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "Campos esperados del CRM, presentes según el documento fuente. La implementación proyecta pero no valida todos los tipos de negocio."
+      },
+      "Visit": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string",
+            "pattern": "^[a-fA-F0-9]{24}$"
+          },
+          "leadId": {
+            "type": "string"
+          },
+          "asesorId": {
+            "type": "string"
+          },
+          "ubicacion": {
+            "type": "string"
+          },
+          "estado": {
+            "type": "string"
+          },
+          "notas": {
+            "type": "string"
+          },
+          "fechaHora": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "duracionMinutos": {
+            "type": "number"
+          }
+        },
+        "description": "Campos esperados del CRM, presentes según el documento fuente. La implementación proyecta pero no valida todos los tipos de negocio."
+      },
+      "Payload": {
+        "type": "object",
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          },
+          "appId": {
+            "type": "string"
+          },
+          "entity": {
+            "type": "string",
+            "const": "lead"
+          },
+          "sourceId": {
+            "type": "string",
+            "pattern": "^[a-fA-F0-9]{24}$"
+          },
+          "lead": {
+            "$ref": "#/components/schemas/Lead"
+          },
+          "activities": {
+            "type": "array",
+            "maxItems": 1000,
+            "items": {
+              "$ref": "#/components/schemas/Activity"
+            }
+          },
+          "visits": {
+            "type": "array",
+            "maxItems": 1000,
+            "items": {
+              "$ref": "#/components/schemas/Visit"
+            }
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "appId",
+          "entity",
+          "sourceId",
+          "lead",
+          "activities",
+          "visits"
+        ]
+      },
+      "Job": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string"
+          },
+          "appId": {
+            "type": "string"
+          },
+          "sourceId": {
+            "type": "string",
+            "pattern": "^[a-fA-F0-9]{24}$"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "previewed",
+              "processing",
+              "retry_pending",
+              "suspended",
+              "synced"
+            ]
+          },
+          "desiredHash": {
+            "type": "string"
+          },
+          "sentHash": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "previewHash": {
+            "type": "string"
+          },
+          "erpId": {
+            "type": "string"
+          },
+          "attempts": {
+            "type": "integer"
+          },
+          "suspended": {
+            "type": "boolean"
+          },
+          "errorCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "previewedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "syncedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "nextAttemptAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "leaseUntil": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "_id",
+          "appId",
+          "sourceId",
+          "status"
+        ]
+      },
+      "AppStatus": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "preview",
+              "live"
+            ]
+          },
+          "appId": {
+            "type": "string"
+          },
+          "mongoReady": {
+            "type": "boolean"
+          },
+          "lastPoll": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "scanned": {
+                    "type": "integer"
+                  },
+                  "rejected": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "at",
+                  "scanned",
+                  "rejected"
+                ]
+              }
+            ]
+          }
+        },
+        "required": [
+          "mode",
+          "appId",
+          "mongoReady",
+          "lastPoll"
+        ]
+      },
+      "Identity": {
+        "type": "object",
+        "properties": {
+          "db_name": {
+            "type": "string"
+          },
+          "server_name": {
+            "type": "string"
+          },
+          "db_file": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "db_name",
+          "server_name",
+          "db_file"
+        ]
+      },
+      "LeadPage": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Lead"
+            }
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "data",
+          "nextCursor"
+        ]
+      },
+      "Preview": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "preview",
+              "live"
+            ]
+          },
+          "payload": {
+            "$ref": "#/components/schemas/Payload"
+          }
+        },
+        "required": [
+          "mode",
+          "payload"
+        ]
+      },
+      "Accepted": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "preview",
+              "live"
+            ]
+          },
+          "job": {
+            "$ref": "#/components/schemas/Job"
+          }
+        },
+        "required": [
+          "mode",
+          "job"
+        ]
+      }
+    }
+  }
+}

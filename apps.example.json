@@ -1,0 +1,12 @@
+[
+  {
+    "id": "crm",
+    "module": "crm",
+    "mongoUriEnv": "CRM_MONGODB_URI",
+    "mongoDbEnv": "CRM_MONGODB_DB",
+    "apiKeyEnv": "CRM_API_KEY",
+    "scopes": ["read", "enqueue", "erp:inspect"],
+    "eligibleStates": ["compra"],
+    "erpProcedure": ""
+  }
+]
